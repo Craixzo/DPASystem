@@ -310,6 +310,9 @@ export const Registry = {
   list(type: RegistryEntry['type'], includeRevoked = false) {
     return db.prepare(`SELECT * FROM registry WHERE type = ? ${includeRevoked ? '' : "AND status = 'active'"} ORDER BY approved_at DESC LIMIT 50`).all(type) as RegistryEntry[];
   },
+  delete(id: number) {
+    return db.prepare('DELETE FROM registry WHERE id = ?').run(id).changes > 0;
+  },
   revoke(id: number, by: string, reason: string) {
     return db.prepare("UPDATE registry SET status = 'revoked', revoked_by = ?, revoke_reason = ? WHERE id = ? AND status = 'active'").run(by, reason, id).changes > 0;
   },

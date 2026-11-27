@@ -22,17 +22,17 @@ export const config = {
   dbPath: optional('DB_PATH') ?? './data/dpa.sqlite',
 
   staffRoleIds,
-  // Falls back to staff roles if not set
-  mapManagerRoleIds: list('MAP_MANAGER_ROLE_IDS').length ? list('MAP_MANAGER_ROLE_IDS') : staffRoleIds,
+  // The ONLY roles that can use /maps (no staff or admin fallback)
+  mapRoleIds: list('MAP_ROLE_IDS'),
 
   channels: {
     roleRequests: optional('ROLE_REQUEST_CHANNEL_ID'),
     roleReview: optional('ROLE_REVIEW_CHANNEL_ID'),
-    ticketPanel: optional('TICKET_PANEL_CHANNEL_ID'),
     conflictBoard: optional('CONFLICT_BOARD_CHANNEL_ID'),
     conflictAnnouncements: optional('CONFLICT_ANNOUNCE_CHANNEL_ID') ?? optional('CONFLICT_BOARD_CHANNEL_ID'),
     maps: optional('MAPS_CHANNEL_ID'),
-    registry: optional('REGISTRY_CHANNEL_ID'),
+    treaties: optional('TREATY_CHANNEL_ID'), // registered / removed treaties
+    registeredEntities: optional('REGISTERED_ENTITIES_CHANNEL_ID'), // registered / removed criminal orgs
     log: optional('LOG_CHANNEL_ID'),
   },
   categories: {
@@ -50,3 +50,7 @@ export const config = {
   staffPingChannel: optional('STAFF_PING_CHANNEL_ID') ?? optional('LOG_CHANNEL_ID'),
   inactivityDays: Number(optional('INACTIVITY_DAYS') ?? 3),
 };
+
+export function registryChannel(type: 'treaty' | 'crimorg'): string | undefined {
+  return type === 'treaty' ? config.channels.treaties : config.channels.registeredEntities;
+}

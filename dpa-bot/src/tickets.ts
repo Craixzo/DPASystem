@@ -18,7 +18,7 @@ import {
   type Message,
   type OverwriteResolvable,
 } from 'discord.js';
-import { config } from './config.js';
+import { config, registryChannel } from './config.js';
 import { Registry, Tickets, type Ticket, type TicketType } from './db.js';
 import { staffOverwrites } from './conflictOps.js';
 import { Colors, errorEmbed, okEmbed, unEmbed } from './theme.js';
@@ -225,8 +225,9 @@ export async function handleTicketButton(i: ButtonInteraction) {
     const record = ticketSummary(t.type, d)
       .setTitle(`${TYPES[t.type].emoji} ${t.type === 'treaty' ? 'Treaty registered' : 'Criminal organization registered'}: ${d.name}`)
       .setDescription(`Registry #${regId} • Submitted by <@${t.opener_id}> • Approved by <@${i.user.id}>`);
-    await sendTo(i.client, config.channels.registry, { embeds: [record] });
-    await i.followUp({ embeds: [okEmbed(`Registered as **#${regId}**${config.channels.registry ? ` in <#${config.channels.registry}>` : ''}. You can close this ticket now.`)] });
+    const posted = registryChannel(t.type);
+    await sendTo(i.client, posted, { embeds: [record] });
+    await i.followUp({ embeds: [okEmbed(`Registered as **#${regId}**${posted ? ` in <#${posted}>` : ''}. You can close this ticket now.`)] });
     await audit(i.client, 'Registry entry approved', `#${regId} ${t.type} **${d.name}** by <@${i.user.id}>`, Colors.approved);
   }
 }

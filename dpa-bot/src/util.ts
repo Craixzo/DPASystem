@@ -16,10 +16,10 @@ export function isStaff(member: GuildMember | null | undefined): boolean {
   return config.staffRoleIds.some((id) => member.roles.cache.has(id));
 }
 
-export function canManageMaps(member: GuildMember | null | undefined): boolean {
+/** /maps is limited to MAP_ROLE_IDS only — no staff or Administrator bypass. */
+export function canUseMaps(member: GuildMember | null | undefined): boolean {
   if (!member) return false;
-  if (member.permissions.has(PermissionFlagsBits.Administrator)) return true;
-  return config.mapManagerRoleIds.some((id) => member.roles.cache.has(id));
+  return config.mapRoleIds.some((id) => member.roles.cache.has(id));
 }
 
 export function memberOf(interaction: Interaction): GuildMember | null {
