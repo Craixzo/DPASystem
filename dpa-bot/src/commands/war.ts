@@ -13,7 +13,9 @@ import { endConflict, lockToConflict, postAnnouncement, refreshConflictViews } f
 import { Colors, errorEmbed, okEmbed, unEmbed } from '../theme.js';
 import {
   audit,
+  sendTo,
   channelName,
+  inCeasefire,
   isStaff,
   isUrl,
   memberOf,
@@ -21,6 +23,7 @@ import {
   outcomeLabel,
   resolveConflict,
   splitNations,
+  statusIcon,
   truncate,
   ts,
 } from '../util.js';
@@ -197,6 +200,15 @@ export const war: Command = {
         .addStringOption((o) => o.setName('label').setDescription('e.g. "Eastern Pact"').setRequired(true).setMaxLength(60))
         .addStringOption(conflictOpt))
     .addSubcommand((s) =>
+      s.setName('ceasefire').setDescription('Put the conflict under ceasefire (pauses it without ending it)')
+        .addStringOption((o) => o.setName('reason').setDescription('Terms / reason, posted publicly').setRequired(true).setMaxLength(500))
+        .addIntegerOption((o) => o.setName('hours').setDescription('Ceasefire length — staff are pinged when it expires').setMinValue(1).setMaxValue(24 * 60))
+        .addStringOption(conflictOpt))
+    .addSubcommand((s) =>
+      s.setName('resume').setDescription('Lift a ceasefire — hostilities resume')
+        .addStringOption((o) => o.setName('reason').setDescription('Why the ceasefire ended').setMaxLength(500))
+        .addStringOption(conflictOpt))
+    .addSubcommand((s) =>
       s.setName('set-outcome').setDescription('Change the recorded outcome of a concluded conflict')
         .addStringOption((o) => o.setName('outcome').setDescription('Outcome').setRequired(true).addChoices(...OUTCOME_CHOICES))
         .addStringOption((o) => o.setName('notes').setDescription('Summary note').setMaxLength(900))
@@ -273,6 +285,26 @@ export const war: Command = {
         Conflicts.update(c.id, side === 'A' ? { side_a_name: label } : { side_b_name: label });
         return done(`Side ${side} is now labelled **${label}**.`);
       }
+      case 'ceasefire': {
+        if (inCeasefire(c)) return i.reply({ embeds: [errorEmbed(`**${c.name}** is already under ceasefire. Use \`/war resume\` first to change it.`)], flags: eph });
+        const reason = i.options.getString('reason', true);
+        const hours = i.options.getInteger('hours');
+        const until = hours ? Date.now() + hours * 3_600_000 : null;
+        Conflicts.update(c.id, { ceasefire_at: Date.now(), ceasefire_until: until, ceasefire_reason: reason, ceasefire_by: i.user.id, ceasefire_expiry_notified: 0 });
+        await sendTo(i.client, c.channel_id ?? undefined, {
+          embeds: [unEmbed(Colors.warning).setTitle('🕊️ Ceasefire in effect').setDescription(`${reason}${until ? `\n\nExpires ${ts(until)} (${ts(until, 'R')}).` : ''}\n\nAll hostilities are to cease until the DPA lifts the ceasefire.`)],
+        });
+        return done(`**${c.name}** is now under ceasefire${until ? ` until ${ts(until)}` : ''}.`);
+      }
+      case 'resume': {
+        if (!inCeasefire(c)) return i.reply({ embeds: [errorEmbed(`**${c.name}** isn't under ceasefire.`)], flags: eph });
+        const reason = i.options.getString('reason');
+        Conflicts.update(c.id, { ceasefire_at: null, ceasefire_until: null, ceasefire_reason: null, ceasefire_by: null, ceasefire_expiry_notified: 0 });
+        await sendTo(i.client, c.channel_id ?? undefined, {
+          embeds: [unEmbed().setTitle('⚔️ Ceasefire lifted').setDescription(`Hostilities in **${c.name}** may resume.${reason ? `\n> ${reason}` : ''}`)],
+        });
+        return done(`Ceasefire lifted for **${c.name}**.`);
+      }
       case 'set-outcome': {
         if (c.status !== 'ended') return i.reply({ embeds: [errorEmbed('This conflict is still active — use `/stop-war`.')], flags: eph });
         const outcome = i.options.getString('outcome', true) as Outcome;
@@ -325,7 +357,7 @@ export const conflicts: Command = {
     const filter = (i.options.getString('filter') ?? 'active') as 'active' | 'ended' | 'all';
     const list: Conflict[] = Conflicts.list(filter === 'all' ? undefined : filter, 30);
     const body = list.length
-      ? list.map((c) => `${c.status === 'active' ? '🟢' : '⚫'} **${c.name}** — ${c.status === 'active' ? `since ${ts(c.started_at, 'D')}` : outcomeLabel(c)}`).join('\n')
+      ? list.map((c) => `${statusIcon(c)} **${c.name}** — ${c.status === 'ended' ? outcomeLabel(c) : inCeasefire(c) ? `ceasefire since ${ts(c.ceasefire_at!, 'D')}` : `since ${ts(c.started_at, 'D')}`}`).join('\n')
       : '*None.*';
     const title = { active: 'Active conflicts', ended: 'Concluded conflicts', all: 'All conflicts' }[filter];
     return i.reply({ embeds: [unEmbed().setTitle(`🇺🇳 ${title}`).setDescription(truncate(body, 4000))] });

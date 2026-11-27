@@ -140,8 +140,8 @@ export const help: Command = {
     const embed = unEmbed()
       .setTitle('🇺🇳 DPA Bot — Commands')
       .addFields(
-        { name: 'Everyone', value: ['`/conflict` — details of a conflict', '`/conflicts` — list active / past conflicts', '`/participants` — representatives in a conflict', '`/request-role` — request to represent your nation', '`/maps list` — recommended maps', '`/registry list` — treaties & criminal orgs'].join('\n') },
-        { name: 'Staff', value: ['`/start-war` — open a conflict (renames the channel)', '`/stop-war` — record the outcome & archive', '`/war add-nation | remove-nation | document | rename | side-name | set-outcome`', '`/remove-participant` — remove a rep (reason required)', '`/registry revoke`', '`/setup` — post panels'].join('\n') },
+        { name: 'Everyone', value: ['`/conflict` — details of a conflict', '`/conflicts` — list active / past conflicts', '`/participants` — representatives in a conflict', '`/request-role` — request to represent your nation', '`/maps list` — recommended maps', '`/registry list` — treaties & criminal orgs', '`/treaty view` — a treaty\'s details'].join('\n') },
+        { name: 'Staff', value: ['`/start-war` — open a conflict (renames the channel)', '`/stop-war` — record the outcome & archive', '`/war ceasefire | resume` — pause / resume a conflict', '`/war add-nation | remove-nation | document | rename | side-name | set-outcome`', '`/treaty add` — register a treaty directly', '`/remove-participant` — remove a rep (reason required)', '`/registry revoke`', '`/setup` — post panels'].join('\n') },
         { name: 'Map managers', value: '`/maps add` • `/maps remove`' },
       );
     return i.reply({ embeds: [embed], flags: eph });

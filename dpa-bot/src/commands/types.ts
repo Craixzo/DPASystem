@@ -4,7 +4,7 @@ import type {
   RESTPostAPIChatInputApplicationCommandsJSONBody,
 } from 'discord.js';
 import { Conflicts } from '../db.js';
-import { truncate } from '../util.js';
+import { statusIcon, truncate } from '../util.js';
 
 export interface Command {
   data: { name: string; toJSON(): RESTPostAPIChatInputApplicationCommandsJSONBody };
@@ -18,7 +18,7 @@ export async function conflictAutocomplete(interaction: AutocompleteInteraction,
   const list = Conflicts.search(String(focused), status);
   await interaction.respond(
     list.map((c) => ({
-      name: truncate(`${c.status === 'active' ? '🟢' : '⚫'} ${c.name}`, 100),
+      name: truncate(`${statusIcon(c)} ${c.name}`, 100),
       value: String(c.id),
     })),
   );
