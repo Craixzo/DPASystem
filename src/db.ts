@@ -1,12 +1,13 @@
-import Database from 'better-sqlite3';
+import { DatabaseSync } from 'node:sqlite';
 import fs from 'node:fs';
 import path from 'node:path';
 import { config } from './config.js';
 
 fs.mkdirSync(path.dirname(path.resolve(config.dbPath)), { recursive: true });
-export const db = new Database(config.dbPath);
-db.pragma('journal_mode = WAL');
-db.pragma('foreign_keys = ON');
+// Node's built-in SQLite (no native add-on to compile, so nothing to break on deploy)
+export const db = new DatabaseSync(config.dbPath);
+db.exec('PRAGMA journal_mode = WAL');
+db.exec('PRAGMA foreign_keys = ON');
 
 db.exec(`
 CREATE TABLE IF NOT EXISTS conflicts (
@@ -213,12 +214,12 @@ export const Conflicts = {
     const q = `%${query}%`;
     return (status
       ? db.prepare('SELECT * FROM conflicts WHERE name LIKE ? AND status = ? ORDER BY started_at DESC LIMIT 25').all(q, status)
-      : db.prepare('SELECT * FROM conflicts WHERE name LIKE ? ORDER BY status = \'active\' DESC, started_at DESC LIMIT 25').all(q)) as Conflict[];
+      : db.prepare('SELECT * FROM conflicts WHERE name LIKE ? ORDER BY status = \'active\' DESC, started_at DESC LIMIT 25').all(q)) as unknown as Conflict[];
   },
   list(status?: 'active' | 'ended', limit = 50) {
     return (status
       ? db.prepare('SELECT * FROM conflicts WHERE status = ? ORDER BY COALESCE(ended_at, started_at) DESC LIMIT ?').all(status, limit)
-      : db.prepare('SELECT * FROM conflicts ORDER BY started_at DESC LIMIT ?').all(limit)) as Conflict[];
+      : db.prepare('SELECT * FROM conflicts ORDER BY started_at DESC LIMIT ?').all(limit)) as unknown as Conflict[];
   },
   create(c: Pick<Conflict, 'name' | 'channel_id' | 'role_id' | 'side_a_name' | 'side_b_name' | 'ultimatum_url' | 'ticket_id' | 'started_by'>) {
     const r = db.prepare(`INSERT INTO conflicts (name, channel_id, role_id, side_a_name, side_b_name, ultimatum_url, ticket_id, started_by, started_at)
@@ -235,7 +236,7 @@ export const Conflicts = {
 
 export const Nations = {
   forConflict(conflictId: number) {
-    return db.prepare('SELECT * FROM conflict_nations WHERE conflict_id = ? ORDER BY side, nation').all(conflictId) as ConflictNation[];
+    return db.prepare('SELECT * FROM conflict_nations WHERE conflict_id = ? ORDER BY side, nation').all(conflictId) as unknown as ConflictNation[];
   },
   find(conflictId: number, nation: string) {
     return db.prepare('SELECT * FROM conflict_nations WHERE conflict_id = ? AND nation = ?').get(conflictId, nation) as ConflictNation | undefined;
@@ -269,7 +270,7 @@ export const Participants = {
     return db.prepare("SELECT * FROM participants WHERE conflict_id = ? AND user_id = ? AND status IN ('pending','approved')").get(conflictId, userId) as Participant | undefined;
   },
   forConflict(conflictId: number, status: Participant['status'] = 'approved') {
-    return db.prepare('SELECT * FROM participants WHERE conflict_id = ? AND status = ? ORDER BY side, nation').all(conflictId, status) as Participant[];
+    return db.prepare('SELECT * FROM participants WHERE conflict_id = ? AND status = ? ORDER BY side, nation').all(conflictId, status) as unknown as Participant[];
   },
 };
 
@@ -308,7 +309,7 @@ export const Registry = {
     return Number(r.lastInsertRowid);
   },
   list(type: RegistryEntry['type'], includeRevoked = false) {
-    return db.prepare(`SELECT * FROM registry WHERE type = ? ${includeRevoked ? '' : "AND status = 'active'"} ORDER BY approved_at DESC LIMIT 50`).all(type) as RegistryEntry[];
+    return db.prepare(`SELECT * FROM registry WHERE type = ? ${includeRevoked ? '' : "AND status = 'active'"} ORDER BY approved_at DESC LIMIT 50`).all(type) as unknown as RegistryEntry[];
   },
   delete(id: number) {
     return db.prepare('DELETE FROM registry WHERE id = ?').run(id).changes > 0;
@@ -320,10 +321,10 @@ export const Registry = {
 
 export const Maps = {
   list() {
-    return db.prepare('SELECT * FROM maps ORDER BY added_at ASC').all() as MapEntry[];
+    return db.prepare('SELECT * FROM maps ORDER BY added_at ASC').all() as unknown as MapEntry[];
   },
   search(q: string) {
-    return db.prepare('SELECT * FROM maps WHERE name LIKE ? ORDER BY name LIMIT 25').all(`%${q}%`) as MapEntry[];
+    return db.prepare('SELECT * FROM maps WHERE name LIKE ? ORDER BY name LIMIT 25').all(`%${q}%`) as unknown as MapEntry[];
   },
   add(name: string, url: string, description: string | null, by: string) {
     return db.prepare('INSERT OR IGNORE INTO maps (name, url, description, added_by, added_at) VALUES (?, ?, ?, ?, ?)').run(name, url, description, by, Date.now()).changes > 0;
