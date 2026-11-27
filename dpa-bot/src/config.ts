@@ -1,8 +1,9 @@
-import 'dotenv/config';
+// All settings come from environment variables (Railway → service → Variables).
+// Nothing is read from disk, so no secrets live in the repo.
 
 function required(key: string): string {
   const v = process.env[key]?.trim();
-  if (!v) throw new Error(`Missing required env var ${key} (see .env.example)`);
+  if (!v) throw new Error(`Missing required variable ${key}. Add it in Railway → your service → Variables (see variables.example).`);
   return v;
 }
 function optional(key: string): string | undefined {
