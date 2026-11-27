@@ -89,6 +89,18 @@ export function outcomeLabel(c: Conflict): string {
   }
 }
 
+export const inCeasefire = (c: Conflict) => c.status === 'active' && !!c.ceasefire_at;
+
+export function statusIcon(c: Conflict): string {
+  if (c.status === 'ended') return '⚫';
+  return inCeasefire(c) ? '🟡' : '🟢';
+}
+
+export function statusLabel(c: Conflict): string {
+  if (c.status === 'ended') return '⚫ Concluded';
+  return inCeasefire(c) ? '🟡 Ceasefire' : '🟢 Active';
+}
+
 export const ts = (ms: number, style: 'R' | 'f' | 'D' = 'f') => `<t:${Math.floor(ms / 1000)}:${style}>`;
 
 export function link(label: string, url: string | null | undefined): string {

@@ -90,6 +90,18 @@ CREATE TABLE IF NOT EXISTS maps (
 CREATE TABLE IF NOT EXISTS kv (key TEXT PRIMARY KEY, value TEXT NOT NULL);
 `);
 
+// Migrations for columns added after the first release
+function addColumn(table: string, column: string, def: string) {
+  const cols = db.prepare(`PRAGMA table_info(${table})`).all() as { name: string }[];
+  if (!cols.some((c) => c.name === column)) db.exec(`ALTER TABLE ${table} ADD COLUMN ${column} ${def}`);
+}
+addColumn('conflicts', 'ceasefire_at', 'INTEGER');
+addColumn('conflicts', 'ceasefire_until', 'INTEGER');
+addColumn('conflicts', 'ceasefire_reason', 'TEXT');
+addColumn('conflicts', 'ceasefire_by', 'TEXT');
+addColumn('conflicts', 'ceasefire_expiry_notified', 'INTEGER NOT NULL DEFAULT 0');
+addColumn('conflicts', 'last_reminded_at', 'INTEGER');
+
 // Seed recommended maps once
 if (!getKv('maps_seeded')) {
   const ins = db.prepare('INSERT OR IGNORE INTO maps (name, url, description, added_by, added_at) VALUES (?, ?, ?, ?, ?)');
@@ -125,6 +137,13 @@ export interface Conflict {
   started_at: number;
   ended_by: string | null;
   ended_at: number | null;
+  /** Set while an active conflict is under ceasefire (status stays 'active'). */
+  ceasefire_at: number | null;
+  ceasefire_until: number | null;
+  ceasefire_reason: string | null;
+  ceasefire_by: string | null;
+  ceasefire_expiry_notified: number;
+  last_reminded_at: number | null;
 }
 export interface ConflictNation { id: number; conflict_id: number; side: Side; nation: string }
 export interface Participant {

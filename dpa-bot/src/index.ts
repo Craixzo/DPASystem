@@ -4,15 +4,17 @@ import { config } from './config.js';
 import { conflict, conflicts, startWar, stopWar, war } from './commands/war.js';
 import { handleDenyModal, handleRequestButton, participants, removeParticipant, requestRole } from './commands/participants.js';
 import { help, maps, registry, setup } from './commands/misc.js';
+import { treaty } from './commands/treaty.js';
+import { startReminders } from './reminders.js';
 import type { Command } from './commands/types.js';
 import { handleCloseModal, handleTicketButton, handleTicketModal, handleTicketSelect } from './tickets.js';
 import { errorEmbed } from './theme.js';
 
 const commands = new Map<string, Command>(
-  [startWar, stopWar, war, conflict, conflicts, requestRole, removeParticipant, participants, maps, registry, setup, help].map((c) => [c.data.name, c]),
+  [startWar, stopWar, war, conflict, conflicts, requestRole, removeParticipant, participants, maps, registry, treaty, setup, help].map((c) => [c.data.name, c]),
 );
 
-const client = new Client({ intents: [GatewayIntentBits.Guilds, GatewayIntentBits.GuildMembers] });
+const client = new Client({ intents: [GatewayIntentBits.Guilds, GatewayIntentBits.GuildMembers, GatewayIntentBits.GuildMessages] });
 
 client.once(Events.ClientReady, async (c) => {
   console.log(`Logged in as ${c.user.tag}`);
@@ -21,6 +23,7 @@ client.once(Events.ClientReady, async (c) => {
   console.log(`Registered ${commands.size} commands in ${guild.name}`);
   await refreshConflictBoard(c).catch((e) => console.warn('board refresh failed', e));
   await refreshMapsBoard(c).catch((e) => console.warn('maps refresh failed', e));
+  startReminders(c);
 });
 
 async function route(i: Interaction) {

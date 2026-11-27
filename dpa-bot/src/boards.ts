@@ -2,7 +2,15 @@ import { Client, EmbedBuilder, type Message } from 'discord.js';
 import { config } from './config.js';
 import { Conflicts, getKv, Maps, Nations, Participants, setKv, type Conflict } from './db.js';
 import { Colors, unEmbed } from './theme.js';
-import { link, outcomeLabel, truncate, ts } from './util.js';
+import { inCeasefire, link, outcomeLabel, statusLabel, truncate, ts } from './util.js';
+
+function ceasefireLine(c: Conflict): string {
+  return [
+    `**Ceasefire since:** ${ts(c.ceasefire_at!)}`,
+    c.ceasefire_until ? ` • expires ${ts(c.ceasefire_until, 'R')}` : '',
+    c.ceasefire_reason ? `\n> ${truncate(c.ceasefire_reason, 500)}` : '',
+  ].join('');
+}
 
 function sideLines(c: Conflict) {
   const nations = Nations.forConflict(c.id);
@@ -23,11 +31,12 @@ export function conflictEmbed(c: Conflict): EmbedBuilder {
     return list.length ? list.map((r) => `<@${r.user_id}> — ${r.nation}`).join('\n') : '*None approved*';
   };
 
-  const e = unEmbed(c.status === 'active' ? Colors.unBlue : Colors.navy)
-    .setTitle(`${c.status === 'active' ? '⚔️' : '📁'} ${c.name}`)
+  const e = unEmbed(c.status === 'ended' ? Colors.navy : inCeasefire(c) ? Colors.warning : Colors.unBlue)
+    .setTitle(`${c.status === 'ended' ? '📁' : inCeasefire(c) ? '🕊️' : '⚔️'} ${c.name}`)
     .setDescription(
       [
-        `**Status:** ${c.status === 'active' ? '🟢 Active' : '⚫ Concluded'}`,
+        `**Status:** ${statusLabel(c)}`,
+        inCeasefire(c) ? ceasefireLine(c) : null,
         c.status === 'ended' ? `**Outcome:** ${outcomeLabel(c)}` : null,
         c.outcome_notes ? `> ${truncate(c.outcome_notes, 900)}` : null,
         `**Started:** ${ts(c.started_at)} (${ts(c.started_at, 'R')})`,
@@ -57,12 +66,13 @@ export function conflictEmbed(c: Conflict): EmbedBuilder {
 export function announcementEmbed(c: Conflict): EmbedBuilder {
   const sides = sideLines(c);
   const ended = c.status === 'ended';
-  return unEmbed(ended ? Colors.navy : Colors.unBlue)
-    .setAuthor({ name: ended ? 'CONFLICT CONCLUDED' : 'CONFLICT DECLARED' })
+  const cf = inCeasefire(c);
+  return unEmbed(ended ? Colors.navy : cf ? Colors.warning : Colors.unBlue)
+    .setAuthor({ name: ended ? 'CONFLICT CONCLUDED' : cf ? 'CEASEFIRE IN EFFECT' : 'CONFLICT DECLARED' })
     .setTitle(c.name)
     .setDescription(
       [
-        ended ? `**Outcome:** ${outcomeLabel(c)}` : 'The Department of Political Affairs has recognised a state of armed conflict.',
+        ended ? `**Outcome:** ${outcomeLabel(c)}` : cf ? ceasefireLine(c) : 'The Department of Political Affairs has recognised a state of armed conflict.',
         ended && c.outcome_notes ? `> ${truncate(c.outcome_notes, 600)}` : null,
         c.channel_id ? `Channel: <#${c.channel_id}>` : null,
         `Started ${ts(c.started_at, 'R')}${c.ended_at ? ` • Ended ${ts(c.ended_at, 'R')}` : ''}`,
@@ -83,7 +93,7 @@ function boardEmbed(): EmbedBuilder {
     ? active
         .map((c) => {
           const s = sideLines(c);
-          return `**${c.name}** ${c.channel_id ? `• <#${c.channel_id}>` : ''}\n🟦 ${truncate(s.a, 120)}\n🟥 ${truncate(s.b, 120)}\nStarted ${ts(c.started_at, 'R')}`;
+          return `${inCeasefire(c) ? '🟡 ' : ''}**${c.name}**${inCeasefire(c) ? ' *(ceasefire)*' : ''} ${c.channel_id ? `• <#${c.channel_id}>` : ''}\n🟦 ${truncate(s.a, 120)}\n🟥 ${truncate(s.b, 120)}\nStarted ${ts(c.started_at, 'R')}`;
         })
         .join('\n\n')
     : '*No active conflicts. The world is at peace — for now.*';

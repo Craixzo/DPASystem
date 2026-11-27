@@ -44,4 +44,8 @@ export const config = {
   maxRepsPerNation: Number(optional('MAX_REPS_PER_NATION') ?? 2),
   deleteConflictRoleOnEnd: (optional('DELETE_CONFLICT_ROLE_ON_END') ?? 'true') !== 'false',
   iconUrl: optional('EMBED_ICON_URL'),
+
+  // Staff pings: conflicts with no messages for this many days (0 = off), and expired ceasefires
+  staffPingChannel: optional('STAFF_PING_CHANNEL_ID') ?? optional('LOG_CHANNEL_ID'),
+  inactivityDays: Number(optional('INACTIVITY_DAYS') ?? 3),
 };
