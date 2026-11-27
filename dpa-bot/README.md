@@ -2,43 +2,6 @@
 
 Discord bot for running conflicts, representative requests, a registry ticket desk, a treaty and criminal-organization register, and a maps board.
 TypeScript · discord.js v14 · SQLite · hosted on Railway.
-
----
-
-## 1. Discord setup
-
-1. **Developer Portal → your app → Bot**
-   - Enable the **Server Members** intent.
-   - Copy the token (goes in Railway, never in the repo).
-2. **Invite** with scopes `bot applications.commands` and these permissions (or Administrator):
-   Manage Channels · Manage Roles · View Channels · Send Messages · Embed Links · Attach Files · Read Message History
-3. **Server Settings → Roles:** drag the bot's role **above** where conflict roles will be created, or it can't assign them.
-4. Create the channels and categories listed in `variables.example` and copy their IDs (Developer Mode → right-click → Copy ID).
-
-## 2. Railway setup
-
-1. New service from your GitHub repo. Railway runs `npm run build`, then `npm start`.
-2. **Variables → Raw Editor:** paste `variables.example`, fill in the values, save.
-   The bot only reads these variables. It reads nothing from disk, so secrets never touch the repo.
-3. **Add a Volume** mounted at `/data` and keep `DB_PATH=/data/dpa.sqlite`.
-   Without a volume, the database is wiped on every deploy.
-4. Deploy. Slash commands register to your server automatically on start.
-
-## 3. First run in Discord
-
-The bot can't put a dropdown or instructions in a channel until something tells it to, so run these once:
-
-| Where | Command |
-|---|---|
-| Ticket channel | `/setup panel: Ticket panel` |
-| Role-request channel | `/setup panel: Role-request instructions` |
-
-The conflicts board and the maps post are created automatically on startup. `/setup` only re-creates them if someone deletes them.
-
----
-
-## How it works
-
 ### Conflicts
 1. A member opens a **Register a Conflict** ticket (both sides plus the ultimatum link).
 2. Staff agree a name and run `/start-war name:…` in the ticket. The channel is renamed, moved to the conflict category, and locked to a new `⚔ <name>` role. Sides are filled in from the ticket, an announcement is posted, and the board updates.
