@@ -13,7 +13,7 @@ TypeScript · discord.js v14 · SQLite · hosted on Railway.
 Only staff can name or rename a conflict (`/start-war`, `/war rename`).
 
 ### Tickets
-Dropdown with three options: **Criminal Organization**, **Treaty**, **Conflict**.
+Dropdown posted automatically in `TICKET_CHANNEL_ID` on startup (request instructions likewise in `ROLE_REQUEST_CHANNEL_ID`), with three options: **Criminal Organization**, **Treaty**, **Conflict**.
 - Treaty and criminal-organization tickets have an **Approve & register** button.
   - Treaties are posted to `TREATY_CHANNEL_ID`.
   - Criminal organizations are posted to `REGISTERED_ENTITIES_CHANNEL_ID`.
@@ -40,7 +40,6 @@ Every 30 minutes the bot pings staff in `STAFF_PING_CHANNEL_ID` about:
 | `/remove-participant` | Staff | Remove a rep; the reason is required and DMed to them |
 | `/treaty add` · `remove` | Staff | Register or remove a treaty (`remove` revokes, or erases with `delete_record: True`) |
 | `/registry revoke` | Staff | Revoke any treaty or criminal organization by number |
-| `/setup` | Staff | Post the ticket panel / request instructions |
 | `/maps list` · `add` · `remove` | `MAP_ROLE_IDS` only | Maps; `add`/`remove` update the #dpa-maps post |
 | `/conflict` | Everyone | Full card: sides, documents, reps, outcome |
 | `/conflicts` | Everyone | Active / concluded / all |
