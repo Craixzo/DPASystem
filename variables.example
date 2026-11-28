@@ -16,7 +16,9 @@ STAFF_ROLE_IDS=
 MAP_ROLE_IDS=
 
 # ── Channels ──
-# Only channel /request-role works in
+# Ticket dropdown panel (posted automatically on startup)
+TICKET_CHANNEL_ID=
+# Only channel /request-role works in (instructions are posted here automatically)
 ROLE_REQUEST_CHANNEL_ID=
 # Staff-only: requests land here with Approve / Deny
 ROLE_REVIEW_CHANNEL_ID=

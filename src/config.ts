@@ -26,6 +26,7 @@ export const config = {
   mapRoleIds: list('MAP_ROLE_IDS'),
 
   channels: {
+    tickets: optional('TICKET_CHANNEL_ID'), // ticket dropdown panel is posted here automatically
     roleRequests: optional('ROLE_REQUEST_CHANNEL_ID'),
     roleReview: optional('ROLE_REVIEW_CHANNEL_ID'),
     conflictBoard: optional('CONFLICT_BOARD_CHANNEL_ID'),

@@ -1,11 +1,9 @@
-import { ChannelType, MessageFlags, PermissionFlagsBits, SlashCommandBuilder } from 'discord.js';
-import { mapsEmbed, refreshConflictBoard, refreshMapsBoard } from '../boards.js';
+import { MessageFlags, SlashCommandBuilder } from 'discord.js';
+import { mapsEmbed, refreshMapsBoard } from '../boards.js';
 import { config, registryChannel } from '../config.js';
 import { Maps, Registry } from '../db.js';
-import { ticketPanel } from '../tickets.js';
 import { errorEmbed, okEmbed, unEmbed } from '../theme.js';
 import { audit, canUseMaps, isRobloxGameUrl, isStaff, memberOf, sendTo, splitNations, truncate, ts } from '../util.js';
-import { requestPanelEmbed } from './participants.js';
 import type { Command } from './types.js';
 
 const eph = MessageFlags.Ephemeral;
@@ -101,38 +99,6 @@ export const registry: Command = {
   },
 };
 
-// ───────────────────────── /setup ─────────────────────────
-export const setup: Command = {
-  data: new SlashCommandBuilder()
-    .setName('setup')
-    .setDescription('Post or refresh the bot\'s panels (admin)')
-    .setDefaultMemberPermissions(PermissionFlagsBits.ManageGuild)
-    .addStringOption((o) => o.setName('panel').setDescription('Which panel').setRequired(true).addChoices(
-      { name: 'Ticket panel (posts here)', value: 'tickets' },
-      { name: 'Role-request instructions (posts here)', value: 'requests' },
-      { name: 'Active conflicts board', value: 'board' },
-      { name: 'Maps board', value: 'maps' },
-    )),
-  async execute(i) {
-    if (!isStaff(memberOf(i))) return i.reply({ embeds: [errorEmbed('Staff only.')], flags: eph });
-    const panel = i.options.getString('panel', true);
-    const ch = i.channel;
-    if (panel === 'tickets' || panel === 'requests') {
-      if (!ch || ch.type !== ChannelType.GuildText) return i.reply({ embeds: [errorEmbed('Run this in a text channel.')], flags: eph });
-      await ch.send(panel === 'tickets' ? ticketPanel() : { embeds: [requestPanelEmbed()] });
-    }
-    if (panel === 'board') {
-      if (!config.channels.conflictBoard) return i.reply({ embeds: [errorEmbed('Set CONFLICT_BOARD_CHANNEL_ID first.')], flags: eph });
-      await refreshConflictBoard(i.client, true);
-    }
-    if (panel === 'maps') {
-      if (!config.channels.maps) return i.reply({ embeds: [errorEmbed('Set MAPS_CHANNEL_ID first.')], flags: eph });
-      await refreshMapsBoard(i.client);
-    }
-    return i.reply({ embeds: [okEmbed('Done.')], flags: eph });
-  },
-};
-
 // ───────────────────────── /dpa-help ─────────────────────────
 export const help: Command = {
   data: new SlashCommandBuilder().setName('dpa-help').setDescription('List DPA bot commands'),
@@ -141,7 +107,7 @@ export const help: Command = {
       .setTitle('🇺🇳 DPA Bot — Commands')
       .addFields(
         { name: 'Everyone', value: ['`/conflict` — details of a conflict', '`/conflicts` — list active / past conflicts', '`/participants` — representatives in a conflict', '`/request-role` — request to represent your nation', '`/registry list` — treaties & criminal orgs', '`/treaty view` — a treaty\'s details'].join('\n') },
-        { name: 'Staff', value: ['`/start-war` — open a conflict (renames the channel)', '`/stop-war` — record the outcome & archive', '`/war ceasefire | resume` — pause / resume a conflict', '`/war add-nation | remove-nation | document | rename | side-name | set-outcome`', '`/treaty add | remove` — register or remove a treaty', '`/remove-participant` — remove a rep (reason required)', '`/registry revoke`', '`/setup` — post panels'].join('\n') },
+        { name: 'Staff', value: ['`/start-war` — open a conflict (renames the channel)', '`/stop-war` — record the outcome & archive', '`/war ceasefire | resume` — pause / resume a conflict', '`/war add-nation | remove-nation | document | rename | side-name | set-outcome`', '`/treaty add | remove` — register or remove a treaty', '`/remove-participant` — remove a rep (reason required)', '`/registry revoke`'].join('\n') },
         { name: 'Map roles', value: '`/maps list` • `/maps add` • `/maps remove`' },
       );
     return i.reply({ embeds: [embed], flags: eph });
