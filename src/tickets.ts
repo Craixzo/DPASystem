@@ -18,6 +18,7 @@ import {
   type Message,
   type OverwriteResolvable,
 } from 'discord.js';
+import { TITLES } from './boards.js';
 import { config, registryChannel } from './config.js';
 import { Registry, Tickets, type Ticket, type TicketType } from './db.js';
 import { staffOverwrites } from './conflictOps.js';
@@ -35,7 +36,7 @@ const TYPES: Record<TicketType, { label: string; emoji: string; description: str
 // ───────────────────────── panel ─────────────────────────
 export function ticketPanel() {
   const embed = unEmbed()
-    .setTitle('🇺🇳 Department of Political Affairs — Registry Desk')
+    .setTitle(TITLES.tickets)
     .setDescription(
       [
         'Select a request type below to open a private ticket with DPA staff.',

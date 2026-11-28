@@ -10,6 +10,7 @@ import {
   TextInputBuilder,
   TextInputStyle,
 } from 'discord.js';
+import { TITLES } from '../boards.js';
 import { config } from '../config.js';
 import { Conflicts, Nations, Participants, type Conflict, type Participant } from '../db.js';
 import { refreshConflictViews } from '../conflictOps.js';
@@ -235,7 +236,7 @@ export const participants: Command = {
 
 export function requestPanelEmbed() {
   return unEmbed()
-    .setTitle('🪪 Conflict Representation Requests')
+    .setTitle(TITLES.requests)
     .setDescription(
       [
         'To represent your nation in an **active** conflict, use:',

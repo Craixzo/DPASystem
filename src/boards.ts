@@ -103,22 +103,48 @@ function boardEmbed(): EmbedBuilder {
     : '*None yet.*';
 
   return unEmbed()
-    .setTitle('🇺🇳 Active Conflicts Register')
+    .setTitle(TITLES.conflictBoard)
     .setDescription(truncate(activeText, 4000))
     .addFields({ name: 'Recently concluded', value: truncate(endedText, 1024) });
 }
 
-async function fetchStored(client: Client, key: string): Promise<Message | null> {
+export const TITLES = {
+  conflictBoard: '🇺🇳 Active Conflicts Register',
+  maps: '🗺️ DPA Recommended Maps',
+  tickets: '🇺🇳 Department of Political Affairs — Registry Desk',
+  requests: '🪪 Conflict Representation Requests',
+};
+
+/**
+ * Finds the bot's existing post for `key` in `channelId` so restarts edit it instead of re-sending.
+ * 1. Uses the stored message ID if it still exists.
+ * 2. Otherwise scans the channel's last 100 messages for the bot's own post with this embed title
+ *    (works even if the database was reset). Older duplicates found while scanning are deleted.
+ */
+export async function findOwnMessage(client: Client, key: string, channelId: string, title: string): Promise<Message | null> {
+  const ch = await client.channels.fetch(channelId).catch(() => null);
+  if (!ch?.isTextBased()) return null;
+
   const stored = getKv(key);
-  if (!stored) return null;
-  const [channelId, messageId] = stored.split(':');
-  try {
-    const ch = await client.channels.fetch(channelId);
-    if (ch?.isTextBased()) return await ch.messages.fetch(messageId);
-  } catch {
-    /* gone */
+  if (stored) {
+    const [storedChannel, messageId] = stored.split(':');
+    if (storedChannel === channelId) {
+      const msg = await ch.messages.fetch(messageId).catch(() => null);
+      if (msg) return msg;
+    }
   }
-  return null;
+
+  const recent = await ch.messages.fetch({ limit: 100 }).catch(() => null);
+  if (!recent) return null;
+  const mine = [...recent.values()]
+    .filter((m) => m.author.id === client.user?.id && m.embeds[0]?.title === title)
+    .sort((a, b) => b.createdTimestamp - a.createdTimestamp);
+  if (!mine.length) return null;
+
+  const [keep, ...duplicates] = mine;
+  for (const d of duplicates) await d.delete().catch(() => null);
+  setKv(key, `${keep.channelId}:${keep.id}`);
+  return keep;
 }
 
 /**
@@ -128,10 +154,10 @@ async function fetchStored(client: Client, key: string): Promise<Message | null>
 export async function refreshConflictBoard(client: Client, repost = false) {
   const channelId = config.channels.conflictBoard;
   if (!channelId) return;
-  const existing = await fetchStored(client, 'board:conflicts');
+  const existing = await findOwnMessage(client, 'board:conflicts', channelId, TITLES.conflictBoard);
   const payload = { embeds: [boardEmbed()] };
 
-  if (existing && !repost && existing.channelId === channelId) {
+  if (existing && !repost) {
     await existing.edit(payload).catch(() => null);
     return;
   }
@@ -160,15 +186,15 @@ export function mapsEmbed(): EmbedBuilder {
   const body = maps.length
     ? maps.map((m, i) => `**${i + 1}. [${m.name}](${m.url})**${m.description ? `\n${truncate(m.description, 200)}` : ''}`).join('\n\n')
     : '*No maps listed yet.*';
-  return unEmbed().setTitle('🗺️ DPA Recommended Maps').setDescription(truncate(body, 4000));
+  return unEmbed().setTitle(TITLES.maps).setDescription(truncate(body, 4000));
 }
 
 export async function refreshMapsBoard(client: Client) {
   const channelId = config.channels.maps;
   if (!channelId) return;
-  const existing = await fetchStored(client, 'board:maps');
+  const existing = await findOwnMessage(client, 'board:maps', channelId, TITLES.maps);
   const payload = { embeds: [mapsEmbed()] };
-  if (existing && existing.channelId === channelId) {
+  if (existing) {
     await existing.edit(payload).catch(() => null);
     return;
   }
